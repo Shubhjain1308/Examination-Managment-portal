@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<!-- ======================= ADMIN DASHBOARD ======================= -->
+{% if current_user.role == 'admin' %}
+
+  <h3>Admin Dashboard</h3>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-2"><div class="card card-body text-center"><h2>{{ stats['Courses'] }}</h2>Courses</div></div>
+    <div class="col-md-2"><div class="card card-body text-center"><h2>{{ stats['Examinations'] }}</h2>Exams</div></div>
+    <div class="col-md-2"><div class="card card-body text-center"><h2>{{ stats['Examiners'] }}</h2>Examiners</div></div>
+    <div class="col-md-2"><div class="card card-body text-center"><h2>{{ stats['Students'] }}</h2>Students</div></div>
+    <div class="col-md-2"><div class="card card-body text-center"><h2>{{ stats['Slots'] }}</h2>Slots</div></div>
+    <div class="col-md-2"><div class="card card-body text-center"><h2>{{ stats['Bookings'] }}</h2>Bookings</div></div>
+  </div>
+
+  {% if pending > 0 %}
+    <div class="alert alert-info">
+      {{ pending }} examiner(s) are waiting for approval.
+      <a href="{{ url_for('admin.examiners') }}">Review them</a>
+    </div>
+  {% endif %}
+
+{% endif %}
+
+
+<!-- ======================= EXAMINER DASHBOARD ======================= -->
+{% if current_user.role == 'examiner' %}
+
+  <h3>Examiner Dashboard</h3>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ exams|length }}</h2>Assigned exams</div></div>
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ slots|length }}</h2>Slots created</div></div>
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ booked }}</h2>Students booked</div></div>
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ pending|length }}</h2>Pending evaluations</div></div>
+  </div>
+
+  <h5>Assigned Exams</h5>
+  <table class="table bg-white">
+    <tr>
+      <th>Exam</th>
+      <th>Course</th>
+      <th>Status</th>
+    </tr>
+    {% for exam in exams %}
+      <tr>
+        <td>{{ exam.name }}</td>
+        <td>{{ exam.course.code }}</td>
+        <td>{{ exam.status }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3">No exams assigned yet.</td></tr>
+    {% endfor %}
+  </table>
+
+  <h5>
+    My Slots
+    <a class="btn btn-primary btn-sm float-end" href="{{ url_for('examiner.slot_form') }}">+ Create Slot</a>
+  </h5>
+  <table class="table bg-white">
+    <tr>
+      <th>Exam</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Seats</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+    {% for slot in slots %}
+      <tr>
+        <td>{{ slot.exam.name }}</td>
+        <td>{{ slot.date }}</td>
+        <td>{{ slot.start_time.strftime('%H:%M') }} - {{ slot.end_time.strftime('%H:%M') }}</td>
+        <td>{{ slot.available_seats }} / {{ slot.capacity }}</td>
+        <td>{{ slot.status }}</td>
+        <td>
+          <a class="btn btn-sm btn-outline-primary"
+             href="{{ url_for('examiner.slot_detail', slot_id=slot.id) }}">Students</a>
+
+          <a class="btn btn-sm btn-outline-secondary"
+             href="{{ url_for('examiner.slot_form', slot_id=slot.id) }}">Edit</a>
+
+          <form method="post" class="d-inline"
+                action="{{ url_for('examiner.slot_delete', slot_id=slot.id) }}">
+            <button class="btn btn-sm btn-outline-danger">Remove</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">You have not created any slots yet.</td></tr>
+    {% endfor %}
+  </table>
+
+{% endif %}
+
+
+<!-- ======================= STUDENT DASHBOARD ======================= -->
+{% if current_user.role == 'student' %}
+
+  <h3>Student Dashboard</h3>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ open_exams|length }}</h2>Exams open for booking</div></div>
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ slots|length }}</h2>Available slots</div></div>
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ upcoming|length }}</h2>Upcoming exams</div></div>
+    <div class="col-md-3"><div class="card card-body text-center"><h2>{{ results|length }}</h2>Published results</div></div>
+  </div>
+
+  <h5>Exams open for booking</h5>
+  <table class="table bg-white">
+    <tr>
+      <th>Exam</th>
+      <th>Type</th>
+      <th>Book before</th>
+      <th></th>
+    </tr>
+    {% for exam in open_exams %}
+      <tr>
+        <td>{{ exam.name }} ({{ exam.course.code }})</td>
+        <td>{{ exam.exam_type }}</td>
+        <td>{{ exam.booking_end or '-' }}</td>
+        <td>
+          <a class="btn btn-sm btn-primary"
+             href="{{ url_for('student.exam_view', exam_id=exam.id) }}">View slots</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">No exam is open for booking right now.</td></tr>
+    {% endfor %}
+  </table>
+
+  <h5>Upcoming exams</h5>
+  <table class="table bg-white">
+    <tr>
+      <th>Exam</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Examiner</th>
+    </tr>
+    {% for booking in upcoming %}
+      <tr>
+        <td>{{ booking.slot.exam.name }}</td>
+        <td>{{ booking.slot.date }}</td>
+        <td>{{ booking.slot.start_time.strftime('%H:%M') }} - {{ booking.slot.end_time.strftime('%H:%M') }}</td>
+        <td>{{ booking.slot.examiner.name }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">You have no upcoming exams.</td></tr>
+    {% endfor %}
+  </table>
+
+  <h5>Published results</h5>
+  <ul>
+    {% for booking in results %}
+      <li>{{ booking.slot.exam.name }}: <b>{{ booking.evaluation.total_marks }}</b></li>
+    {% else %}
+      <li>No results published yet.</li>
+    {% endfor %}
+  </ul>
+
+{% endif %}
+
+
+{% endblock %}

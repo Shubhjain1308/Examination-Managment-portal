@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<!-- ======================= ALL SLOTS ======================= -->
+{% if view == 'slots' %}
+
+  <h3>All Slots</h3>
+
+  <table class="table table-striped bg-white">
+    <tr>
+      <th>ID</th>
+      <th>Exam</th>
+      <th>Examiner</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Seats</th>
+      <th>Status</th>
+      <th>Change examiner</th>
+    </tr>
+
+    {% for slot in slots %}
+      <tr>
+        <td>{{ slot.id }}</td>
+        <td>{{ slot.exam.name }}</td>
+        <td>{{ slot.examiner.name }}</td>
+        <td>{{ slot.date }}</td>
+        <td>{{ slot.start_time.strftime('%H:%M') }} - {{ slot.end_time.strftime('%H:%M') }}</td>
+        <td>{{ slot.available_seats }} / {{ slot.capacity }}</td>
+        <td>{{ slot.status }}</td>
+        <td>
+
+          <!-- 'eligible' has the other examiners of the same exam -->
+          {% if eligible[slot.id] %}
+            <form method="post" action="{{ url_for('admin.slot_change_examiner', slot_id=slot.id) }}" class="d-flex gap-1">
+              <select class="form-select form-select-sm" name="examiner_id">
+                {% for user in eligible[slot.id] %}
+                  <option value="{{ user.id }}">{{ user.name }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-sm btn-outline-primary">Set</button>
+            </form>
+          {% else %}
+            <small>No other examiner</small>
+          {% endif %}
+
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8">No slots yet.</td></tr>
+    {% endfor %}
+  </table>
+
+{% endif %}
+
+
+<!-- ======================= ALL BOOKINGS ======================= -->
+{% if view == 'bookings' %}
+
+  <h3>All Bookings</h3>
+
+  <table class="table table-striped bg-white">
+    <tr>
+      <th>ID</th>
+      <th>Student</th>
+      <th>Exam</th>
+      <th>Slot</th>
+      <th>Examiner</th>
+      <th>Status</th>
+      <th>Reschedule to</th>
+    </tr>
+
+    {% for booking in bookings %}
+      <tr>
+        <td>{{ booking.id }}</td>
+        <td>{{ booking.student.name }}</td>
+        <td>{{ booking.slot.exam.name }}</td>
+        <td>#{{ booking.slot.id }} - {{ booking.slot.date }} {{ booking.slot.start_time.strftime('%H:%M') }}</td>
+        <td>{{ booking.slot.examiner.name }}</td>
+        <td>{{ booking.status }}</td>
+        <td>
+
+          <!-- 'options' has the free slots a booking can be moved to -->
+          {% if booking.status == 'Booked' %}
+            {% if options[booking.id] %}
+              <form method="post" action="{{ url_for('admin.booking_reschedule', booking_id=booking.id) }}" class="d-flex gap-1">
+                <select class="form-select form-select-sm" name="slot_id">
+                  {% for slot in options[booking.id] %}
+                    <option value="{{ slot.id }}">
+                      #{{ slot.id }} - {{ slot.date }} {{ slot.start_time.strftime('%H:%M') }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-outline-primary">Move</button>
+              </form>
+            {% else %}
+              <small>No other free slot</small>
+            {% endif %}
+          {% endif %}
+
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7">No bookings yet.</td></tr>
+    {% endfor %}
+  </table>
+
+{% endif %}
+
+
+{% endblock %}

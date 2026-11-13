@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<!-- ======================= EXAMINERS ======================= -->
+{% if kind == 'examiner' %}
+
+  <h3>Examiners</h3>
+
+  <table class="table table-striped bg-white">
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Department</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+
+    {% for user in users %}
+      <tr>
+        <td>{{ user.id }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.examiner_profile.department or '' }}</td>
+        <td>{{ user.examiner_profile.status }}</td>
+        <td>
+
+          {% if user.examiner_profile.status != 'Approved' %}
+            <form method="post" class="d-inline"
+                  action="{{ url_for('admin.examiner_action', user_id=user.id, action='approve') }}">
+              <button class="btn btn-sm btn-success">Approve</button>
+            </form>
+          {% endif %}
+
+          {% if user.examiner_profile.status != 'Deactivated' %}
+            <form method="post" class="d-inline"
+                  action="{{ url_for('admin.examiner_action', user_id=user.id, action='deactivate') }}">
+              <button class="btn btn-sm btn-outline-danger">Deactivate</button>
+            </form>
+          {% endif %}
+
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">No examiners yet.</td></tr>
+    {% endfor %}
+  </table>
+
+  <!-- Admin can also add an examiner directly (approved automatically) -->
+  <h5>Add an examiner</h5>
+
+  <form method="post" class="row g-2 col-md-10">
+    <div class="col"><input class="form-control" name="name" placeholder="Name" required></div>
+    <div class="col"><input class="form-control" type="email" name="email" placeholder="Email" required></div>
+    <div class="col"><input class="form-control" name="department" placeholder="Department"></div>
+    <div class="col"><input class="form-control" type="password" name="password" placeholder="Password" required></div>
+    <div class="col-auto"><button class="btn btn-primary">Add</button></div>
+  </form>
+
+{% endif %}
+
+
+<!-- ======================= STUDENTS ======================= -->
+{% if kind == 'student' %}
+
+  <h3>Students</h3>
+
+  <table class="table table-striped bg-white">
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Roll number</th>
+      <th>Contact</th>
+      <th>Bookings</th>
+    </tr>
+
+    {% for student in users %}
+      <tr>
+        <td>{{ student.id }}</td>
+        <td>{{ student.name }}</td>
+        <td>{{ student.email }}</td>
+        <td>{{ student.roll_no or '' }}</td>
+        <td>{{ student.contact or '' }}</td>
+        <td>{{ student.bookings|length }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">No students yet.</td></tr>
+    {% endfor %}
+  </table>
+
+{% endif %}
+
+
+{% endblock %}

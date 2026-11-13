@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ======================= TITLE ======================= -->
+<h3>
+  {{ exam.name }}
+  <small class="text-muted">({{ exam.course.code }} / {{ exam.exam_type }})</small>
+
+  <form method="post" class="d-inline float-end" action="{{ url_for('admin.exam_delete', exam_id=exam.id) }}">
+    <button class="btn btn-outline-danger btn-sm">Delete</button>
+  </form>
+  <a class="btn btn-outline-secondary btn-sm float-end me-2" href="{{ url_for('admin.exam_form', exam_id=exam.id) }}">Edit</a>
+</h3>
+
+<p>
+  Duration: {{ exam.duration }} min |
+  Max marks: {{ exam.max_marks }} <br>
+  Slot creation: {{ exam.slot_creation_start or '-' }} to {{ exam.slot_creation_end or '-' }} <br>
+  Booking: {{ exam.booking_start or '-' }} to {{ exam.booking_end or '-' }}
+</p>
+
+
+<!-- ======================= STATUS BUTTONS ======================= -->
+<div class="card card-body mb-4">
+  <b>Current status: {{ exam.status }}</b>
+
+  <form method="post" action="{{ url_for('admin.exam_status', exam_id=exam.id) }}" class="mt-2">
+    <button class="btn btn-sm btn-success" name="status" value="Slot Creation">Open slot creation</button>
+    <button class="btn btn-sm btn-success" name="status" value="Booking Open">Open student booking</button>
+    <button class="btn btn-sm btn-outline-danger" name="status" value="Closed">Close</button>
+    <button class="btn btn-sm btn-outline-secondary" name="status" value="Draft">Back to Draft</button>
+    <button class="btn btn-sm btn-dark" name="status" value="Completed">Mark completed</button>
+  </form>
+</div>
+
+
+<!-- ======================= RUBRICS ======================= -->
+<h5>Rubrics (total {{ rubric_total }} / exam max {{ exam.max_marks }})</h5>
+
+<!-- Existing rubrics: each one has an Update form and a Delete form -->
+{% for r in exam.rubrics %}
+  <div class="card card-body mb-2">
+
+    <form method="post" action="{{ url_for('admin.rubric_update', rubric_id=r.id) }}" class="row g-2">
+      <div class="col-md-3">
+        <input class="form-control" name="criterion_name" value="{{ r.criterion_name }}" required>
+      </div>
+      <div class="col-md-2">
+        <input class="form-control" type="number" step="any" min="0" name="max_marks" value="{{ r.max_marks }}" required>
+      </div>
+      <div class="col-md-2">
+        <input class="form-control" type="number" step="any" min="0" name="weightage" value="{{ r.weightage or 0 }}">
+      </div>
+      <div class="col-md-3">
+        <input class="form-control" name="description" value="{{ r.description or '' }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-primary">Update</button>
+      </div>
+    </form>
+
+    <form method="post" action="{{ url_for('admin.rubric_delete', rubric_id=r.id) }}" class="mt-2">
+      <button class="btn btn-sm btn-outline-danger">Delete this rubric</button>
+    </form>
+
+  </div>
+{% else %}
+  <p>No rubrics yet.</p>
+{% endfor %}
+
+<!-- Add a new rubric -->
+<h6 class="mt-3">Add a new rubric</h6>
+<form method="post" action="{{ url_for('admin.rubric_add', exam_id=exam.id) }}" class="row g-2 mb-4">
+  <div class="col-md-3">
+    <input class="form-control" name="criterion_name" placeholder="Criterion (e.g. Coding)" required>
+  </div>
+  <div class="col-md-2">
+    <input class="form-control" type="number" step="any" min="0" name="max_marks" placeholder="Max marks" required>
+  </div>
+  <div class="col-md-2">
+    <input class="form-control" type="number" step="any" min="0" name="weightage" placeholder="Weightage">
+  </div>
+  <div class="col-md-3">
+    <input class="form-control" name="description" placeholder="Description">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-success">+ Add</button>
+  </div>
+</form>
+
+
+<!-- ======================= ASSIGNED EXAMINERS ======================= -->
+<h5>Assigned Examiners</h5>
+
+<table class="table bg-white">
+  {% for link in exam.examiners %}
+    <tr>
+      <td>{{ link.examiner.name }} ({{ link.examiner.email }})</td>
+      <td class="text-end">
+        <form method="post" action="{{ url_for('admin.exam_unassign', link_id=link.id) }}">
+          <button class="btn btn-sm btn-outline-danger">Remove</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td>No examiners assigned yet.</td></tr>
+  {% endfor %}
+</table>
+
+<!-- Assign a new examiner (only approved examiners who are not assigned yet) -->
+{% if free_examiners %}
+  <form method="post" action="{{ url_for('admin.exam_assign', exam_id=exam.id) }}" class="row g-2 col-md-6 mb-4">
+    <div class="col-8">
+      <select class="form-select" name="examiner_id">
+        {% for user in free_examiners %}
+          <option value="{{ user.id }}">{{ user.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-4">
+      <button class="btn btn-success">Assign</button>
+    </div>
+  </form>
+{% endif %}
+
+
+<!-- ======================= SLOTS OF THIS EXAM ======================= -->
+<h5>Slots</h5>
+
+<table class="table bg-white">
+  <tr>
+    <th>ID</th>
+    <th>Examiner</th>
+    <th>Date</th>
+    <th>Time</th>
+    <th>Seats</th>
+    <th>Status</th>
+  </tr>
+  {% for slot in exam.slots %}
+    <tr>
+      <td>{{ slot.id }}</td>
+      <td>{{ slot.examiner.name }}</td>
+      <td>{{ slot.date }}</td>
+      <td>{{ slot.start_time.strftime('%H:%M') }} - {{ slot.end_time.strftime('%H:%M') }}</td>
+      <td>{{ slot.available_seats }} / {{ slot.capacity }}</td>
+      <td>{{ slot.status }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6">No slots yet.</td></tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

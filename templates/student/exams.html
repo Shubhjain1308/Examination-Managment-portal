@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<!-- ======================= LIST OF EXAMS ======================= -->
+{% if mode == 'list' %}
+
+  <h3>Examinations</h3>
+
+  <!-- Search and filter -->
+  <form class="row g-2 mb-3">
+    <div class="col-md-5">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Search by exam or course">
+    </div>
+
+    <div class="col-md-3">
+      <select class="form-select" name="type">
+        <option value="">All types</option>
+        {% for exam_type in types %}
+          <option {% if t == exam_type %}selected{% endif %}>{{ exam_type }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-auto">
+      <button class="btn btn-primary">Filter</button>
+    </div>
+  </form>
+
+  <table class="table bg-white">
+    <tr>
+      <th>Exam</th>
+      <th>Course</th>
+      <th>Type</th>
+      <th>Duration</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+
+    {% for exam in exams %}
+      <tr>
+        <td>{{ exam.name }}</td>
+        <td>{{ exam.course.code }} - {{ exam.course.name }}</td>
+        <td>{{ exam.exam_type }}</td>
+        <td>{{ exam.duration }} min</td>
+        <td>{{ exam.status }}</td>
+        <td>
+          <a class="btn btn-sm btn-outline-primary"
+             href="{{ url_for('student.exam_view', exam_id=exam.id) }}">Details</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">No exams found.</td></tr>
+    {% endfor %}
+  </table>
+
+{% endif %}
+
+
+<!-- ======================= ONE EXAM AND ITS SLOTS ======================= -->
+{% if mode == 'detail' %}
+
+  <h3>
+    {{ exam.name }}
+    <small class="text-muted">({{ exam.course.code }} / {{ exam.exam_type }})</small>
+  </h3>
+
+  <p>
+    Duration: {{ exam.duration }} min |
+    Max marks: {{ exam.max_marks }} <br>
+    Booking: {{ exam.booking_start or '-' }} to {{ exam.booking_end or '-' }} <br>
+    Status: <b>{{ exam.status }}</b>
+  </p>
+
+  <!-- Shown if the student has already booked this exam -->
+  {% if my_booking %}
+    <div class="alert alert-success">
+      You have booked this exam: slot #{{ my_booking.slot.id }} on {{ my_booking.slot.date }}.
+    </div>
+  {% endif %}
+
+  <!-- Shown when booking is closed or not started -->
+  {% if not can_book %}
+    <div class="alert alert-secondary">Booking is not open right now.</div>
+  {% endif %}
+
+  <table class="table bg-white">
+    <tr>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Examiner</th>
+      <th>Seats</th>
+      <th></th>
+    </tr>
+
+    {% for slot in exam.slots %}
+      <tr>
+        <td>{{ slot.date }}</td>
+        <td>{{ slot.start_time.strftime('%H:%M') }} - {{ slot.end_time.strftime('%H:%M') }}</td>
+        <td>{{ slot.examiner.name }}</td>
+        <td>{{ slot.available_seats }} / {{ slot.capacity }}</td>
+        <td>
+
+          {% if slot.status == 'Full' %}
+            <span class="badge text-bg-danger">Full</span>
+          {% endif %}
+
+          <!-- Book button: only if booking is open, not booked before, and the slot has seats -->
+          {% if can_book and not my_booking and slot.status == 'Available' %}
+            <form method="post" action="{{ url_for('student.book_slot', slot_id=slot.id) }}">
+              <button class="btn btn-sm btn-success">Book</button>
+            </form>
+          {% endif %}
+
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">No slots yet.</td></tr>
+    {% endfor %}
+  </table>
+
+  <a href="{{ url_for('student.exams') }}">&larr; All exams</a>
+
+{% endif %}
+
+
+{% endblock %}

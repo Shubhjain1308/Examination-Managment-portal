@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Search results for "{{ q }}"</h3>
+
+{% if not q %}
+  <p>Type a name or ID in the search box at the top.</p>
+{% endif %}
+
+{% if res %}
+
+  <h5>Students ({{ res.students|length }})</h5>
+  <ul>
+    {% for s in res.students %}
+      <li>#{{ s.id }} - {{ s.name }} - {{ s.email }}</li>
+    {% endfor %}
+  </ul>
+
+  <h5>Examiners ({{ res.examiners|length }})</h5>
+  <ul>
+    {% for e in res.examiners %}
+      <li>#{{ e.id }} - {{ e.name }} - {{ e.email }}</li>
+    {% endfor %}
+  </ul>
+
+  <h5>Exams ({{ res.exams|length }})</h5>
+  <ul>
+    {% for e in res.exams %}
+      <li>#{{ e.id }} - <a href="{{ url_for('admin.exam_detail', exam_id=e.id) }}">{{ e.name }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <h5>Bookings ({{ res.bookings|length }})</h5>
+  <ul>
+    {% for b in res.bookings %}
+      <li>#{{ b.id }} - {{ b.student.name }} - {{ b.slot.exam.name }} - {{ b.status }}</li>
+    {% endfor %}
+  </ul>
+
+{% endif %}
+
+{% endblock %}

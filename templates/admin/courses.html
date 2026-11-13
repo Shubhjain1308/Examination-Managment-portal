@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Courses</h3>
+
+<form method="post" class="card card-body mb-4">
+  <div class="row g-2">
+
+    <div class="col-md-2">
+      <label>Code</label>
+      <input class="form-control" name="code" value="{% if course %}{{ course.code }}{% endif %}" required>
+    </div>
+
+    <div class="col-md-3">
+      <label>Name</label>
+      <input class="form-control" name="name" value="{% if course %}{{ course.name }}{% endif %}" required>
+    </div>
+
+    <div class="col-md-4">
+      <label>Description</label>
+      <input class="form-control" name="description" value="{% if course %}{{ course.description or '' }}{% endif %}">
+    </div>
+
+    <div class="col-md-2">
+      <label>Status</label>
+      <select class="form-select" name="status">
+        <option {% if course and course.status == 'Active' %}selected{% endif %}>Active</option>
+        <option {% if course and course.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+
+    <div class="col-md-1 d-flex align-items-end">
+      <button class="btn btn-primary">{% if course %}Update{% else %}Add{% endif %}</button>
+    </div>
+
+  </div>
+</form>
+
+<!-- List of all courses -->
+<table class="table table-striped bg-white">
+  <tr>
+    <th>ID</th>
+    <th>Code</th>
+    <th>Name</th>
+    <th>Status</th>
+    <th>Exams</th>
+    <th>Actions</th>
+  </tr>
+
+  {% for c in courses %}
+    <tr>
+      <td>{{ c.id }}</td>
+      <td>{{ c.code }}</td>
+      <td>{{ c.name }}</td>
+      <td>{{ c.status }}</td>
+      <td>{{ c.exams|length }}</td>
+      <td>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.courses', course_id=c.id) }}">Edit</a>
+
+        <form method="post" class="d-inline" action="{{ url_for('admin.course_delete', course_id=c.id) }}">
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6">No courses yet.</td></tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

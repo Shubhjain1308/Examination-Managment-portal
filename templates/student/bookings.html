@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<!-- ======================= BOOKING HISTORY ======================= -->
+{% if mode == 'history' %}
+
+  <h3>My Bookings</h3>
+
+  <table class="table bg-white">
+    <tr>
+      <th>ID</th>
+      <th>Exam</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Examiner</th>
+      <th>Booked on</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+
+    {% for booking in bookings %}
+      <tr>
+        <td>#{{ booking.id }}</td>
+        <td>{{ booking.slot.exam.name }}</td>
+        <td>{{ booking.slot.date }}</td>
+        <td>{{ booking.slot.start_time.strftime('%H:%M') }} - {{ booking.slot.end_time.strftime('%H:%M') }}</td>
+        <td>{{ booking.slot.examiner.name }}</td>
+        <td>{{ booking.booking_date }}</td>
+        <td>{{ booking.status }}</td>
+        <td>
+
+          <!-- Cancel button: only for active bookings, and only before the deadline -->
+          {% if booking.status == 'Booked' and can_cancel(booking.slot.exam) %}
+            <form method="post" action="{{ url_for('student.cancel_booking', booking_id=booking.id) }}">
+              <button class="btn btn-sm btn-outline-danger">Cancel</button>
+            </form>
+          {% endif %}
+
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8">You have no bookings yet.</td></tr>
+    {% endfor %}
+  </table>
+
+{% endif %}
+
+
+<!-- ======================= RESULTS ======================= -->
+{% if mode == 'results' %}
+
+  <h3>Results and Feedback</h3>
+
+  {% for booking in bookings %}
+    <div class="card mb-3">
+      <div class="card-body">
+
+        <h5>
+          {{ booking.slot.exam.name }}
+          <span class="badge text-bg-primary">Total: {{ booking.evaluation.total_marks }}</span>
+        </h5>
+
+        <!-- Marks for each rubric -->
+        <table class="table table-sm w-auto">
+          {% for score in booking.evaluation.scores %}
+            <tr>
+              <td>{{ score.rubric.criterion_name }}</td>
+              <td>{{ score.marks_awarded }} / {{ score.rubric.max_marks }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+
+        <p class="mb-0"><b>Remarks:</b> {{ booking.evaluation.remarks or '-' }}</p>
+
+      </div>
+    </div>
+  {% else %}
+    <p>No results have been published yet.</p>
+  {% endfor %}
+
+{% endif %}
+
+
+{% endblock %}

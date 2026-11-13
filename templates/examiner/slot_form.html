@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>{% if slot %}Edit{% else %}Create{% endif %} Slot</h3>
+
+<!-- Shown when no assigned exam has its slot creation period open -->
+{% if not exams %}
+  <div class="alert alert-warning">
+    The slot creation period is not open for any of your assigned exams right now.
+  </div>
+{% endif %}
+
+<form method="post" class="card card-body col-md-6">
+
+  <label>Examination</label>
+  <select class="form-select mb-3" name="exam_id" required>
+    {% for exam in exams %}
+      <option value="{{ exam.id }}" {% if slot and slot.exam_id == exam.id %}selected{% endif %}>
+        {{ exam.name }} ({{ exam.course.code }})
+      </option>
+    {% endfor %}
+  </select>
+
+  <label>Date</label>
+  <input class="form-control mb-3" type="date" name="date"
+         value="{% if slot %}{{ slot.date }}{% endif %}" required>
+
+  <div class="row">
+    <div class="col">
+      <label>Start time</label>
+      <input class="form-control mb-3" type="time" name="start_time"
+             value="{% if slot %}{{ slot.start_time.strftime('%H:%M') }}{% endif %}" required>
+    </div>
+
+    <div class="col">
+      <label>End time</label>
+      <input class="form-control mb-3" type="time" name="end_time"
+             value="{% if slot %}{{ slot.end_time.strftime('%H:%M') }}{% endif %}" required>
+    </div>
+  </div>
+
+  <label>Maximum number of students</label>
+  <input class="form-control mb-3" type="number" min="1" name="capacity"
+         value="{% if slot %}{{ slot.capacity }}{% else %}1{% endif %}" required>
+
+  <button class="btn btn-primary">Save</button>
+
+</form>
+
+<p class="mt-3">
+  <a href="{{ url_for('examiner.dashboard') }}">&larr; Back to dashboard</a>
+</p>
+
+{% endblock %}
